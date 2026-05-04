@@ -1,0 +1,1655 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aim Trainer</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --shell: 1080px;
+        --bg-deep: #07090f;
+        --cyan: #38d9ff;
+        --cyan-soft: #7ae9ff;
+        --cyan-dim: rgba(56, 217, 255, 0.42);
+        --cyan-glow: rgba(56, 217, 255, 0.5);
+        --ink: #8892a3;
+        --text: #e8ecf3;
+        --muted: #7d8795;
+        --border: rgba(255, 255, 255, 0.065);
+        --surface: rgba(14, 18, 26, 0.92);
+      }
+
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background:
+          radial-gradient(
+            ellipse 90% 55% at 15% 20%,
+            rgba(99, 102, 241, 0.07),
+            transparent 52%
+          ),
+          radial-gradient(
+            ellipse 110% 75% at 85% 85%,
+            rgba(56, 217, 255, 0.06),
+            transparent 48%
+          ),
+          radial-gradient(
+            ellipse 120% 80% at 50% -25%,
+            rgba(56, 217, 255, 0.09),
+            transparent 55%
+          ),
+          linear-gradient(175deg, #0c1018 0%, var(--bg-deep) 42%, #040508 100%);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        user-select: none;
+      }
+
+      .shell {
+        width: 100%;
+        max-width: var(--shell);
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .app-bar {
+        flex-shrink: 0;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(
+          185deg,
+          rgba(14, 18, 26, 0.97),
+          rgba(8, 10, 15, 0.93)
+        );
+        backdrop-filter: blur(14px);
+        box-shadow: 0 1px 0 rgba(56, 217, 255, 0.05);
+      }
+
+      .app-bar-inner {
+        padding: 0.75rem 1.25rem 0.9rem;
+        display: grid;
+        grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+        align-items: end;
+        gap: 0.85rem 1.5rem;
+      }
+
+      @media (max-width: 920px) {
+        .app-bar-inner {
+          grid-template-columns: 1fr;
+          align-items: stretch;
+        }
+      }
+
+      .bar-left {
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        min-width: 0;
+        max-width: 300px;
+      }
+
+      @media (max-width: 920px) {
+        .bar-left {
+          max-width: none;
+        }
+      }
+
+      .brand {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+      }
+
+      .mode-panel {
+        padding: 0.45rem 0.5rem;
+        border-radius: 10px;
+        background: rgba(6, 10, 16, 0.55);
+        border: 1px solid var(--border);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      }
+
+      .mode-panel-label {
+        display: block;
+        font-size: 0.52rem;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0 0 0.35rem 0.15rem;
+      }
+
+      .mode-seg {
+        display: flex;
+        gap: 0.28rem;
+      }
+
+      .mode-btn {
+        flex: 1;
+        min-width: 0;
+        appearance: none;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(18, 22, 30, 0.85);
+        color: var(--muted);
+        font-family: inherit;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        padding: 0.42rem 0.35rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition:
+          color 0.15s ease,
+          border-color 0.15s ease,
+          background 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+
+      .mode-btn:hover:not(:disabled) {
+        color: var(--text);
+        border-color: rgba(56, 217, 255, 0.22);
+      }
+
+      .mode-btn.active {
+        color: #041018;
+        background: linear-gradient(180deg, var(--cyan-soft), var(--cyan));
+        border-color: rgba(56, 217, 255, 0.45);
+        box-shadow: 0 0 18px var(--cyan-dim);
+      }
+
+      .mode-panel.is-locked {
+        opacity: 0.72;
+      }
+
+      .mode-panel.is-locked .mode-btn {
+        pointer-events: none;
+      }
+
+      .records-inline {
+        font-size: 0.64rem;
+        letter-spacing: 0.02em;
+        line-height: 1.5;
+        color: var(--muted);
+        padding: 0 0.1rem;
+        max-width: 100%;
+      }
+
+      .records-inline .ri-val {
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        color: #9aa4b2;
+      }
+
+      .records-inline .ri-sep {
+        opacity: 0.42;
+        user-select: none;
+        margin: 0 0.2rem;
+      }
+
+      .leaderboard {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: rgba(7, 11, 17, 0.55);
+        padding: 0.45rem 0.55rem 0.5rem;
+      }
+
+      .leaderboard-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.55rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #7a8494;
+        margin-bottom: 0.35rem;
+      }
+
+      .leaderboard-meta {
+        font-size: 0.5rem;
+        color: #687385;
+        letter-spacing: 0.08em;
+      }
+
+      .leaderboard-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.22rem;
+        max-height: 112px;
+        overflow: auto;
+        padding-right: 0.15rem;
+      }
+
+      .leaderboard-item {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 0.4rem;
+        align-items: baseline;
+        font-size: 0.63rem;
+        color: #9ca6b5;
+      }
+
+      .leaderboard-rank {
+        min-width: 1.15rem;
+        color: #6f7b8e;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .leaderboard-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .leaderboard-score {
+        color: #c5d7ef;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .leaderboard-item.current .leaderboard-name {
+        color: var(--cyan-soft);
+      }
+
+      .stats-live-wrap {
+        justify-self: end;
+        width: 100%;
+        max-width: 560px;
+      }
+
+      @media (max-width: 920px) {
+        .stats-live-wrap {
+          justify-self: stretch;
+          max-width: none;
+        }
+      }
+
+      .brand-title {
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.26em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .brand-sub {
+        font-size: 1.18rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+        background: linear-gradient(
+          95deg,
+          #ffffff 0%,
+          var(--cyan-soft) 52%,
+          var(--cyan) 100%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .stats-row.stats-live {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.65rem;
+        align-items: stretch;
+      }
+
+      @media (max-width: 520px) {
+        .stats-row.stats-live {
+          gap: 0.5rem;
+        }
+      }
+
+      .stat-card {
+        padding: 0.62rem 0.75rem 0.62rem 0.88rem;
+        background: linear-gradient(
+          152deg,
+          rgba(20, 26, 36, 0.97),
+          rgba(11, 14, 20, 0.9)
+        );
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.045),
+          0 10px 28px rgba(0, 0, 0, 0.38);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 88px;
+      }
+
+      .stat-card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: linear-gradient(
+          180deg,
+          var(--cyan),
+          rgba(56, 217, 255, 0.12)
+        );
+        box-shadow: 0 0 14px var(--cyan-glow);
+      }
+
+      .stat-card .stat-label {
+        font-size: 0.52rem;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--muted);
+        margin-bottom: 0.35rem;
+        padding-left: 8px;
+        line-height: 1.25;
+      }
+
+      .stat-card .stat-value {
+        font-size: clamp(1.05rem, 2.4vw, 1.25rem);
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        padding-left: 8px;
+        color: #f4f7fb;
+        line-height: 1.12;
+      }
+
+      .stat-card.live-primary {
+        min-height: 96px;
+        border-color: rgba(56, 217, 255, 0.12);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.05),
+          0 0 0 1px rgba(56, 217, 255, 0.06),
+          0 14px 36px rgba(0, 0, 0, 0.42);
+      }
+
+      .stat-card.live-primary .stat-label {
+        font-size: 0.56rem;
+        color: #8b95a5;
+      }
+
+      .stat-card.live-primary .stat-value {
+        font-size: clamp(1.45rem, 4vw, 2.05rem);
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+
+      .timer-card.live-primary .stat-value {
+        color: var(--cyan-soft);
+        text-shadow: 0 0 22px var(--cyan-dim);
+      }
+
+      .timer-card .time-track {
+        margin-top: 0.45rem;
+      }
+
+      .time-track {
+        flex-shrink: 0;
+        height: 7px;
+        margin-top: auto;
+        margin-left: 8px;
+        margin-right: 2px;
+        margin-bottom: 1px;
+        border-radius: 99px;
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(56, 217, 255, 0.14);
+        overflow: hidden;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.45);
+      }
+
+      .time-fill {
+        display: block;
+        height: 100%;
+        width: 100%;
+        border-radius: inherit;
+        background: linear-gradient(
+          90deg,
+          #0096c8,
+          var(--cyan) 48%,
+          var(--cyan-soft)
+        );
+        box-shadow: 0 0 14px var(--cyan-glow);
+        transition: width 1s linear;
+      }
+
+      .stat-card.live-primary .time-track {
+        height: 8px;
+      }
+
+      .timer-unit {
+        font-size: 0.42em;
+        font-weight: 800;
+        opacity: 0.5;
+        margin-left: 0.06em;
+        letter-spacing: 0;
+        vertical-align: 0.15em;
+      }
+
+      main {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        padding: 1rem 1rem 1.35rem;
+        min-height: 0;
+      }
+
+      .play-wrap {
+        width: 100%;
+        max-width: var(--shell);
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        min-height: 0;
+      }
+
+      .play-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 0.4rem 1.25rem;
+        padding: 0 2px 0 6px;
+        font-size: 0.65rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .play-meta span:first-child {
+        flex: 1 1 auto;
+        min-width: min(100%, 200px);
+      }
+
+      .play-meta span:last-child {
+        text-align: right;
+        margin-left: auto;
+      }
+
+      .play-meta span strong {
+        color: var(--cyan-dim);
+        font-weight: 600;
+        letter-spacing: 0.12em;
+      }
+
+      #game-area {
+        position: relative;
+        flex: 1;
+        touch-action: manipulation;
+        max-height: calc(100vh - 270px);
+        min-height: 360px;
+        background:
+          linear-gradient(rgba(45, 219, 255, 0.028) 1px, transparent 1px),
+          linear-gradient(
+            90deg,
+            rgba(45, 219, 255, 0.028) 1px,
+            transparent 1px
+          ),
+          radial-gradient(
+            ellipse at center,
+            rgba(25, 35, 48, 0.58) 0%,
+            rgba(10, 12, 16, 0.94) 72%
+          );
+        background-size:
+          28px 28px,
+          28px 28px,
+          auto;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+        cursor: crosshair;
+        box-shadow:
+          inset 0 0 80px rgba(0, 0, 0, 0.45),
+          0 0 0 1px rgba(45, 219, 255, 0.06),
+          0 24px 56px rgba(0, 0, 0, 0.55);
+      }
+
+      #game-area.waiting {
+        cursor: default;
+      }
+
+      #game-area::before,
+      #game-area::after {
+        content: "";
+        position: absolute;
+        pointer-events: none;
+        z-index: 1;
+        border-color: rgba(45, 219, 255, 0.22);
+        border-style: solid;
+        width: 28px;
+        height: 28px;
+      }
+
+      #game-area::before {
+        top: 12px;
+        left: 12px;
+        border-width: 2px 0 0 2px;
+        box-shadow: -2px -2px 14px rgba(45, 219, 255, 0.12);
+      }
+
+      #game-area::after {
+        bottom: 12px;
+        right: 12px;
+        border-width: 0 2px 2px 0;
+        box-shadow: 2px 2px 14px rgba(45, 219, 255, 0.12);
+      }
+
+      .target {
+        position: absolute;
+        z-index: 5;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        cursor: crosshair;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        border: 2px solid rgba(180, 245, 255, 0.55);
+        background: radial-gradient(
+          circle at 32% 28%,
+          #b8f7ff,
+          var(--cyan) 42%,
+          #0096c8
+        );
+        box-shadow:
+          0 0 14px rgba(45, 219, 255, 0.95),
+          0 0 36px rgba(0, 180, 255, 0.55),
+          inset 0 0 14px rgba(255, 255, 255, 0.35);
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.25rem;
+        background: radial-gradient(
+          ellipse at center,
+          rgba(8, 11, 16, 0.84),
+          rgba(4, 5, 8, 0.93)
+        );
+        backdrop-filter: blur(8px);
+        z-index: 10;
+        border-radius: inherit;
+      }
+
+      .overlay.hidden {
+        display: none;
+      }
+
+      .panel {
+        background: linear-gradient(
+          165deg,
+          rgba(28, 34, 44, 0.98) 0%,
+          rgba(14, 17, 22, 0.98) 100%
+        );
+        border: 1px solid rgba(45, 219, 255, 0.18);
+        border-radius: 18px;
+        padding: 2rem 2.5rem;
+        text-align: center;
+        box-shadow:
+          0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+          0 32px 64px rgba(0, 0, 0, 0.55),
+          0 0 48px rgba(45, 219, 255, 0.08);
+        max-width: min(400px, 100%);
+        width: 100%;
+        position: relative;
+      }
+
+      .panel::before {
+        content: "";
+        position: absolute;
+        inset: -1px;
+        border-radius: inherit;
+        padding: 1px;
+        background: linear-gradient(
+          135deg,
+          rgba(45, 219, 255, 0.35),
+          transparent 40%,
+          transparent 60%,
+          rgba(45, 219, 255, 0.15)
+        );
+        -webkit-mask:
+          linear-gradient(#fff 0 0) content-box,
+          linear-gradient(#fff 0 0);
+        mask:
+          linear-gradient(#fff 0 0) content-box,
+          linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+      }
+
+      .panel-inner {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .panel-badge {
+        display: inline-block;
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 0.26em;
+        text-transform: uppercase;
+        color: var(--cyan-dim);
+        margin-bottom: 0.65rem;
+      }
+
+      .panel h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: #fff;
+        letter-spacing: -0.03em;
+        line-height: 1.15;
+      }
+
+      .panel > .panel-inner > p:not(.result-line) {
+        color: #98a3b0;
+        font-size: 0.9rem;
+        margin-bottom: 1.65rem;
+        line-height: 1.55;
+        max-width: 320px;
+        text-wrap: balance;
+      }
+
+      .btn {
+        appearance: none;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 0.92rem 2rem;
+        border-radius: 11px;
+        background: linear-gradient(180deg, #48e4ff 0%, #12b8e8 45%, #0891c8);
+        color: #041018;
+        box-shadow:
+          0 0 26px rgba(45, 219, 255, 0.45),
+          0 6px 18px rgba(0, 0, 0, 0.45),
+          inset 0 1px 0 rgba(255, 255, 255, 0.35);
+        transition:
+          transform 0.18s ease,
+          box-shadow 0.18s ease,
+          filter 0.18s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.06);
+        box-shadow:
+          0 0 34px rgba(45, 219, 255, 0.55),
+          0 10px 28px rgba(0, 0, 0, 0.5),
+          inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      #result-panel h1 {
+        margin-bottom: 1rem;
+      }
+
+      #result-panel .result-line {
+        width: 100%;
+        text-align: center;
+        color: #b4bdc9;
+        margin: 0.42rem 0;
+        font-size: 1rem;
+        line-height: 1.4;
+      }
+
+      #result-panel .result-line strong {
+        color: var(--cyan-soft);
+        font-variant-numeric: tabular-nums;
+        text-shadow: 0 0 14px var(--cyan-dim);
+      }
+
+      #result-panel .result-line.result-pb {
+        font-size: 0.88rem;
+        color: #7d8795;
+      }
+
+      #result-panel .result-line.result-pb strong {
+        color: #aeb6c2;
+        text-shadow: none;
+        font-weight: 700;
+      }
+
+      #result-panel .btn {
+        margin-top: 1.65rem;
+      }
+
+      .result-banner {
+        width: 100%;
+        margin: 0 0 0.85rem;
+        padding: 0.55rem 0.75rem;
+        border-radius: 10px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--cyan-soft);
+        background: rgba(56, 217, 255, 0.1);
+        border: 1px solid rgba(56, 217, 255, 0.28);
+        box-shadow: 0 0 22px rgba(56, 217, 255, 0.18);
+      }
+
+      .result-banner.hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="app-bar">
+      <div class="shell app-bar-inner">
+        <div class="bar-left">
+          <div class="brand">
+            <span class="brand-title">Pro Labs</span>
+            <span class="brand-sub">Aim Trainer</span>
+          </div>
+          <div
+            class="mode-panel"
+            id="mode-panel"
+            role="group"
+            aria-label="Round length"
+          >
+            <span class="mode-panel-label">Round length</span>
+            <div class="mode-seg">
+              <button
+                type="button"
+                class="mode-btn active"
+                data-duration="60"
+                aria-pressed="true"
+              >
+                60s
+              </button>
+              <button
+                type="button"
+                class="mode-btn"
+                data-duration="30"
+                aria-pressed="false"
+              >
+                30s
+              </button>
+              <button
+                type="button"
+                class="mode-btn"
+                data-duration="15"
+                aria-pressed="false"
+              >
+                15s
+              </button>
+            </div>
+          </div>
+          <div
+            class="records-inline"
+            title="Personal best for the selected round length"
+          >
+            best score <span id="best-score" class="ri-val">0</span> points
+            <span class="ri-sep" aria-hidden="true"> - </span>
+            best accuracy <span id="best-accuracy" class="ri-val">—</span>
+          </div>
+          <div class="leaderboard">
+            <div class="leaderboard-head">
+              <span>Leaderboard</span>
+              <span class="leaderboard-meta" id="leaderboard-meta">0 runs</span>
+            </div>
+            <ol class="leaderboard-list" id="leaderboard-list"></ol>
+          </div>
+        </div>
+        <div class="stats-live-wrap">
+          <div class="stats-row stats-live">
+            <div class="stat-card live-primary">
+              <div class="stat-label">Score</div>
+              <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat-card live-primary timer-card">
+              <div class="stat-label">Time left</div>
+              <div class="stat-value">
+                <span id="timer">60</span><span class="timer-unit">s</span>
+              </div>
+              <div class="time-track" aria-hidden="true">
+                <div class="time-fill" id="time-fill" style="width: 100%"></div>
+              </div>
+            </div>
+            <div class="stat-card live-primary">
+              <div class="stat-label">Accuracy</div>
+              <div class="stat-value" id="accuracy">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+    <main>
+      <div class="play-wrap shell">
+        <div class="play-meta">
+          <span
+            >Round <strong><span id="meta-duration">60</span>s</strong> ·
+            classic</span
+          >
+          <span
+            ><strong>2</strong> targets · neon · <strong>press</strong> to
+            hit</span
+          >
+        </div>
+        <div id="game-area" class="waiting">
+          <div id="start-overlay" class="overlay">
+            <div class="panel">
+              <div class="panel-inner">
+                <span class="panel-badge">Aim · Reflex</span>
+                <h1>Ready?</h1>
+                <p>Designed By Mustafa Canruh.</p>
+                <button type="button" class="btn" id="btn-start">
+                  Start Game
+                </button>
+              </div>
+            </div>
+          </div>
+          <div id="result-overlay" class="overlay hidden">
+            <div class="panel" id="result-panel">
+              <div class="panel-inner">
+                <span class="panel-badge">Session complete</span>
+                <h1>Game Over</h1>
+                <p
+                  class="result-banner hidden"
+                  id="result-banner"
+                  role="status"
+                ></p>
+                <p class="result-line">
+                  Final score <strong id="result-score">0</strong>
+                </p>
+                <p class="result-line">
+                  Run accuracy <strong id="result-accuracy">0%</strong>
+                </p>
+                <p class="result-line result-pb">
+                  PB score <strong id="result-best-score">0</strong> · round
+                  <strong id="result-mode-label">60s</strong>
+                </p>
+                <p class="result-line result-pb">
+                  PB accuracy <strong id="result-best-accuracy">—</strong>
+                </p>
+                <button type="button" class="btn" id="btn-replay">
+                  Play Again
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <audio
+      id="bgm-audio"
+      src="aim-trainer-music.mp3"
+      loop
+      preload="auto"
+      playsinline
+      style="display: none"
+      aria-hidden="true"
+    ></audio>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+      import {
+        getFirestore,
+        collection,
+        doc,
+        getDoc,
+        getDocs,
+        query,
+        orderBy,
+        limit,
+        runTransaction,
+        setDoc,
+        increment,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+      (function () {
+        const TARGET_SIZE = 48;
+        const HALF = TARGET_SIZE / 2;
+        const PAD_X = 100;
+        const PAD_Y = 50;
+        const TARGET_SLOTS = 2;
+        const MIN_GAP_EDGES = 16;
+        const MIN_CENTER_DIST_DEFAULT = TARGET_SIZE + MIN_GAP_EDGES;
+        const MIN_MOVE_FROM_OLD_SPOT = TARGET_SIZE + 24;
+
+        const gameArea = document.getElementById("game-area");
+        const startOverlay = document.getElementById("start-overlay");
+        const resultOverlay = document.getElementById("result-overlay");
+        const btnStart = document.getElementById("btn-start");
+        const btnReplay = document.getElementById("btn-replay");
+        const elScore = document.getElementById("score");
+        const elTimer = document.getElementById("timer");
+        const elAccuracy = document.getElementById("accuracy");
+        const elResultScore = document.getElementById("result-score");
+        const elResultAccuracy = document.getElementById("result-accuracy");
+        const elResultBestScore = document.getElementById("result-best-score");
+        const elResultBestAccuracy = document.getElementById(
+          "result-best-accuracy",
+        );
+        const elResultBanner = document.getElementById("result-banner");
+        const elBestScore = document.getElementById("best-score");
+        const elBestAccuracy = document.getElementById("best-accuracy");
+        const elTimeFill = document.getElementById("time-fill");
+        const elMetaDuration = document.getElementById("meta-duration");
+        const modePanel = document.getElementById("mode-panel");
+        const modeButtons = document.querySelectorAll(".mode-btn");
+        const elResultModeLabel = document.getElementById("result-mode-label");
+        const elLeaderboardList = document.getElementById("leaderboard-list");
+        const elLeaderboardMeta = document.getElementById("leaderboard-meta");
+        const bgmAudio = document.getElementById("bgm-audio");
+
+        const STORAGE_RECORDS = "aimTrainerRecordsByMode";
+        const STORAGE_PROFILE = "aimTrainerPlayerProfile";
+        const FIREBASE_APP_NAME = "aimTrainerApp";
+
+        let roundSeconds = 60;
+        let score = 0;
+        let hits = 0;
+        let totalClicks = 0;
+        let timeLeft = roundSeconds;
+        let timerId = null;
+        let playing = false;
+        const targetEls = [];
+        let playerName = "Mustafa Canruh";
+        let db = null;
+        let firebaseEnabled = false;
+
+        const firebaseConfig = {
+          // BURAYA FIREBASE CONFIG GELECEK
+          apiKey: "AIzaSyDA2qYgwQfzuAAbo_sQFrHpU1G5DfBLyNY",
+          authDomain: "aimtrainer-prolabs.firebaseapp.com",
+          projectId: "aimtrainer-prolabs",
+          storageBucket: "aimtrainer-prolabs.firebasestorage.app",
+          messagingSenderId: "1041310511925",
+          appId: "1:1041310511925:web:1056b25cec8116fbce127c",
+        };
+
+        function readJson(key, fallback) {
+          try {
+            const raw = localStorage.getItem(key);
+            if (!raw) return fallback;
+            const parsed = JSON.parse(raw);
+            return parsed && typeof parsed === "object" ? parsed : fallback;
+          } catch {
+            return fallback;
+          }
+        }
+
+        function writeJson(key, obj) {
+          try {
+            localStorage.setItem(key, JSON.stringify(obj));
+          } catch {}
+        }
+
+        function escapeHtml(v) {
+          return String(v)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        }
+
+        function modeKey() {
+          return String(roundSeconds);
+        }
+
+        function playerDocKey() {
+          return encodeURIComponent(playerName.trim().toLowerCase());
+        }
+
+        function isFirebaseConfigured() {
+          return (
+            firebaseConfig &&
+            typeof firebaseConfig.apiKey === "string" &&
+            firebaseConfig.apiKey &&
+            !firebaseConfig.apiKey.includes("BURAYA")
+          );
+        }
+
+        function initFirebase() {
+          if (!isFirebaseConfigured()) {
+            elLeaderboardMeta.textContent = "Firebase not configured";
+            firebaseEnabled = false;
+            return;
+          }
+          try {
+            const app = initializeApp(firebaseConfig, FIREBASE_APP_NAME);
+            db = getFirestore(app);
+            firebaseEnabled = true;
+          } catch {
+            firebaseEnabled = false;
+            elLeaderboardMeta.textContent = "Firebase init failed";
+          }
+        }
+
+        function ensurePlayerProfile() {
+          const profile = readJson(STORAGE_PROFILE, {});
+          if (profile.name && typeof profile.name === "string") {
+            playerName = profile.name.trim() || "Mustafa Canruh";
+            return;
+          }
+          const legacyScore = parseInt(
+            localStorage.getItem("aimTrainerBestScore"),
+            10,
+          );
+          const legacyAcc = parseFloat(
+            localStorage.getItem("aimTrainerBestAccuracyPct"),
+          );
+          if (Number.isFinite(legacyScore) || Number.isFinite(legacyAcc)) {
+            playerName = "Mustafa Canruh";
+            writeJson(STORAGE_PROFILE, { name: playerName });
+            return;
+          }
+          let asked = window.prompt(
+            "Enter your player name:",
+            "Mustafa Canruh",
+          );
+          if (typeof asked !== "string") asked = "Player";
+          asked = asked.trim();
+          if (!asked) asked = "Player";
+          playerName = asked;
+          writeJson(STORAGE_PROFILE, { name: playerName });
+        }
+
+        function startBackgroundMusic() {
+          if (!bgmAudio) return;
+          bgmAudio.volume = 0.38;
+          bgmAudio.muted = false;
+          bgmAudio.play().catch(function () {
+            // Ignore autoplay policy errors; next click retries.
+          });
+        }
+
+        function readAllRecords() {
+          try {
+            const raw = localStorage.getItem(STORAGE_RECORDS);
+            if (raw) {
+              const o = JSON.parse(raw);
+              return o && typeof o === "object" ? o : {};
+            }
+            const legacyS = parseInt(
+              localStorage.getItem("aimTrainerBestScore"),
+              10,
+            );
+            const legacyA = parseFloat(
+              localStorage.getItem("aimTrainerBestAccuracyPct"),
+            );
+            if (Number.isFinite(legacyS) || Number.isFinite(legacyA)) {
+              const migrated = {
+                60: {
+                  bestScore: Number.isFinite(legacyS)
+                    ? Math.max(0, legacyS)
+                    : 0,
+                  bestAccuracy: Number.isFinite(legacyA)
+                    ? Math.max(0, legacyA)
+                    : 0,
+                },
+              };
+              localStorage.setItem(STORAGE_RECORDS, JSON.stringify(migrated));
+              if (!readJson(STORAGE_PROFILE, {}).name) {
+                writeJson(STORAGE_PROFILE, { name: "Mustafa Canruh" });
+              }
+              return migrated;
+            }
+            return {};
+          } catch {
+            return {};
+          }
+        }
+
+        function writeAllRecords(obj) {
+          try {
+            localStorage.setItem(STORAGE_RECORDS, JSON.stringify(obj));
+          } catch {}
+        }
+
+        function modeKey() {
+          return String(roundSeconds);
+        }
+
+        function readRecords() {
+          const all = readAllRecords();
+          const cur = all[modeKey()];
+          if (!cur || typeof cur !== "object")
+            return { bestScore: 0, bestAccuracy: 0 };
+          const bs = parseInt(cur.bestScore, 10);
+          const ba = parseFloat(cur.bestAccuracy);
+          return {
+            bestScore: Number.isFinite(bs) ? Math.max(0, bs) : 0,
+            bestAccuracy: Number.isFinite(ba) ? Math.max(0, ba) : 0,
+          };
+        }
+
+        function persistRecords(bestScore, bestAccuracyPct) {
+          const all = readAllRecords();
+          all[modeKey()] = {
+            bestScore: bestScore,
+            bestAccuracy: bestAccuracyPct,
+          };
+          writeAllRecords(all);
+        }
+
+        async function incrementRunCountGlobal() {
+          if (!firebaseEnabled || !db) return;
+          try {
+            await setDoc(
+              doc(db, "stats", "global"),
+              { runCount: increment(1) },
+              { merge: true },
+            );
+          } catch {}
+        }
+
+        async function upsertGlobalPB(finalScore, finalAcc) {
+          if (!firebaseEnabled || !db) return;
+          const mode = modeKey();
+          const entryRef = doc(
+            db,
+            "leaderboards",
+            mode,
+            "entries",
+            playerDocKey(),
+          );
+          try {
+            await runTransaction(db, async function (tx) {
+              const snap = await tx.get(entryRef);
+              const current = snap.exists() ? snap.data() : null;
+              const oldScore =
+                current && Number.isFinite(current.score) ? current.score : 0;
+              const oldAcc =
+                current && Number.isFinite(current.accuracy)
+                  ? current.accuracy
+                  : 0;
+              const shouldUpdate =
+                !snap.exists() ||
+                finalScore > oldScore ||
+                (finalScore === oldScore && finalAcc > oldAcc + 0.0001);
+              if (!shouldUpdate) return;
+              tx.set(entryRef, {
+                name: playerName,
+                mode: mode,
+                score: finalScore,
+                accuracy: finalAcc,
+                updatedAt: serverTimestamp(),
+              });
+            });
+          } catch {}
+        }
+
+        async function readGlobalRunCount() {
+          if (!firebaseEnabled || !db) return null;
+          try {
+            const snap = await getDoc(doc(db, "stats", "global"));
+            if (!snap.exists()) return 0;
+            const data = snap.data();
+            return Number.isFinite(data.runCount) ? data.runCount : 0;
+          } catch {
+            return null;
+          }
+        }
+
+        async function renderLeaderboard() {
+          if (!firebaseEnabled || !db) {
+            elLeaderboardMeta.textContent = "Firebase required";
+            elLeaderboardList.innerHTML =
+              '<li class="leaderboard-item"><span class="leaderboard-rank">#</span><span class="leaderboard-name">Configure Firebase</span><span class="leaderboard-score">--</span></li>';
+            return;
+          }
+          elLeaderboardMeta.textContent = "loading...";
+          try {
+            const mode = modeKey();
+            const q = query(
+              collection(db, "leaderboards", mode, "entries"),
+              orderBy("score", "desc"),
+              limit(7),
+            );
+            const [rowsSnap, runCount] = await Promise.all([
+              getDocs(q),
+              readGlobalRunCount(),
+            ]);
+            elLeaderboardMeta.textContent =
+              (Number.isFinite(runCount) ? runCount : 0) + " runs";
+            if (rowsSnap.empty) {
+              elLeaderboardList.innerHTML =
+                '<li class="leaderboard-item"><span class="leaderboard-rank">#</span><span class="leaderboard-name">No runs yet</span><span class="leaderboard-score">--</span></li>';
+              return;
+            }
+            const rows = [];
+            rowsSnap.forEach(function (d) {
+              rows.push(d.data());
+            });
+            rows.sort(function (a, b) {
+              const sDiff = (b.score || 0) - (a.score || 0);
+              if (sDiff !== 0) return sDiff;
+              return (b.accuracy || 0) - (a.accuracy || 0);
+            });
+            elLeaderboardList.innerHTML = rows
+              .map(function (row, i) {
+                const current = row.name === playerName ? " current" : "";
+                const accText =
+                  typeof row.accuracy === "number"
+                    ? Math.round(row.accuracy * 10) / 10 + "%"
+                    : "--";
+                return (
+                  '<li class="leaderboard-item' +
+                  current +
+                  '"><span class="leaderboard-rank">#' +
+                  (i + 1) +
+                  '</span><span class="leaderboard-name">' +
+                  escapeHtml(row.name || "Anonymous") +
+                  '</span><span class="leaderboard-score">' +
+                  (row.score || 0) +
+                  " / " +
+                  accText +
+                  "</span></li>"
+                );
+              })
+              .join("");
+          } catch (err) {
+            const code = err && err.code ? String(err.code) : "unknown";
+            elLeaderboardMeta.textContent = "load failed (" + code + ")";
+          }
+        }
+
+        function formatAccPct(n) {
+          return Math.round(n * 10) / 10 + "%";
+        }
+
+        function renderHeaderRecords() {
+          const r = readRecords();
+          elBestScore.textContent = String(r.bestScore);
+          elBestAccuracy.textContent =
+            r.bestAccuracy > 0 ? formatAccPct(r.bestAccuracy) : "—";
+        }
+
+        async function syncModeUi() {
+          modeButtons.forEach(function (btn) {
+            const d = parseInt(btn.dataset.duration, 10);
+            const on = Number.isFinite(d) && d === roundSeconds;
+            btn.classList.toggle("active", on);
+            btn.setAttribute("aria-pressed", on ? "true" : "false");
+          });
+          elMetaDuration.textContent = String(roundSeconds);
+          if (!playing) {
+            elTimer.textContent = String(roundSeconds);
+            elTimeFill.style.width = "100%";
+          }
+          renderHeaderRecords();
+          await renderLeaderboard();
+        }
+
+        function setTimeProgress() {
+          const pct = Math.max(
+            0,
+            Math.min(100, (timeLeft / roundSeconds) * 100),
+          );
+          elTimeFill.style.width = pct + "%";
+        }
+
+        function updateAccuracyDisplay() {
+          if (totalClicks === 0) {
+            elAccuracy.textContent = "—";
+            return;
+          }
+          elAccuracy.textContent =
+            Math.round((hits / totalClicks) * 1000) / 10 + "%";
+        }
+
+        function insetMargins(w, h) {
+          let mx = PAD_X;
+          let my = PAD_Y;
+          const needW = 2 * mx + TARGET_SIZE + 8;
+          const needH = 2 * my + TARGET_SIZE + 8;
+          if (w < needW) {
+            mx = Math.max(HALF + 12, (w - TARGET_SIZE - 8) / 2);
+          }
+          if (h < needH) {
+            my = Math.max(HALF + 12, (h - TARGET_SIZE - 8) / 2);
+          }
+          return { mx, my };
+        }
+
+        function getSpawnBounds() {
+          const rect = gameArea.getBoundingClientRect();
+          const w = rect.width;
+          const h = rect.height;
+          const { mx, my } = insetMargins(w, h);
+          let minX = mx + HALF;
+          let maxX = w - mx - HALF;
+          let minY = my + HALF;
+          let maxY = h - my - HALF;
+          if (maxX < minX) {
+            minX = HALF + 8;
+            maxX = w - HALF - 8;
+          }
+          if (maxY < minY) {
+            minY = HALF + 8;
+            maxY = h - HALF - 8;
+          }
+          return { minX, maxX, minY, maxY, w, h };
+        }
+
+        function dist(ax, ay, bx, by) {
+          return Math.hypot(ax - bx, ay - by);
+        }
+
+        function otherCenters(skipIndex) {
+          const out = [];
+          for (let i = 0; i < targetEls.length; i++) {
+            if (i === skipIndex) continue;
+            const el = targetEls[i];
+            if (!el || !el.isConnected) continue;
+            const x = parseFloat(el.style.left);
+            const y = parseFloat(el.style.top);
+            if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+            out.push({ x: x, y: y });
+          }
+          return out;
+        }
+
+        function fitsSeparation(x, y, others, minDist) {
+          for (let i = 0; i < others.length; i++) {
+            if (dist(x, y, others[i].x, others[i].y) < minDist) return false;
+          }
+          return true;
+        }
+
+        function pickRandomPoint(bounds) {
+          return {
+            x: bounds.minX + Math.random() * (bounds.maxX - bounds.minX),
+            y: bounds.minY + Math.random() * (bounds.maxY - bounds.minY),
+          };
+        }
+
+        function placeOne(skipIndex, minCenterDist, extraAvoid, minFromExtra) {
+          const bounds = getSpawnBounds();
+          const peers = otherCenters(skipIndex);
+          const avoidPrev = extraAvoid && extraAvoid.length ? extraAvoid : [];
+          const prevMin =
+            typeof minFromExtra === "number" ? minFromExtra : minCenterDist;
+
+          function okStrict(p) {
+            if (!fitsSeparation(p.x, p.y, peers, minCenterDist)) return false;
+            if (
+              avoidPrev.length &&
+              !fitsSeparation(p.x, p.y, avoidPrev, prevMin)
+            )
+              return false;
+            return true;
+          }
+
+          const tries = 160;
+          for (let t = 0; t < tries; t++) {
+            const p = pickRandomPoint(bounds);
+            if (okStrict(p)) return p;
+          }
+
+          const relaxedPeer = Math.max(
+            TARGET_SIZE * 0.95,
+            minCenterDist * 0.88,
+          );
+          const relaxedPrev = Math.max(TARGET_SIZE * 0.95, prevMin * 0.88);
+          function okRelaxed(p) {
+            if (!fitsSeparation(p.x, p.y, peers, relaxedPeer)) return false;
+            if (
+              avoidPrev.length &&
+              !fitsSeparation(p.x, p.y, avoidPrev, relaxedPrev)
+            )
+              return false;
+            return true;
+          }
+          for (let t = 0; t < tries; t++) {
+            const p = pickRandomPoint(bounds);
+            if (okRelaxed(p)) return p;
+          }
+
+          const all = peers.concat(avoidPrev);
+          let best = pickRandomPoint(bounds);
+          let bestScore = -1;
+          for (let t = 0; t < 280; t++) {
+            const p = pickRandomPoint(bounds);
+            let m = Infinity;
+            for (let j = 0; j < all.length; j++) {
+              const d = dist(p.x, p.y, all[j].x, all[j].y);
+              if (d < m) m = d;
+            }
+            if (all.length === 0) m = Infinity;
+            if (m > bestScore) {
+              bestScore = m;
+              best = p;
+            }
+          }
+
+          if (avoidPrev.length > 0) {
+            const ox = avoidPrev[0].x;
+            const oy = avoidPrev[0].y;
+            if (dist(best.x, best.y, ox, oy) < 28) {
+              for (let t = 0; t < 400; t++) {
+                const p = pickRandomPoint(bounds);
+                if (
+                  dist(p.x, p.y, ox, oy) >= 28 &&
+                  fitsSeparation(p.x, p.y, peers, TARGET_SIZE * 0.98)
+                ) {
+                  return p;
+                }
+              }
+            }
+          }
+          return best;
+        }
+
+        function applyPosition(el, x, y) {
+          el.style.left = x + "px";
+          el.style.top = y + "px";
+        }
+
+        function ensureTargets() {
+          while (targetEls.length < TARGET_SLOTS) {
+            const idx = targetEls.length;
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "target";
+            btn.setAttribute("aria-label", "Target");
+            btn.dataset.slot = String(idx);
+            btn.addEventListener("pointerdown", onTargetPointerDown, {
+              passive: false,
+            });
+            gameArea.appendChild(btn);
+            targetEls.push(btn);
+          }
+        }
+
+        function layoutInitialTargets() {
+          ensureTargets();
+          const bounds = getSpawnBounds();
+          let minD = MIN_CENTER_DIST_DEFAULT;
+          const spanX = bounds.maxX - bounds.minX;
+          const spanY = bounds.maxY - bounds.minY;
+          const roughMax = Math.hypot(spanX, spanY);
+          if (roughMax < minD * 1.2) {
+            minD = Math.max(TARGET_SIZE * 0.92, roughMax / 2.8);
+          }
+          const p0 = pickRandomPoint(bounds);
+          applyPosition(targetEls[0], p0.x, p0.y);
+          const p1 = placeOne(1, minD, null, null);
+          applyPosition(targetEls[1], p1.x, p1.y);
+        }
+
+        function repositionSlot(slotIndex, avoidPreviousSpot) {
+          ensureTargets();
+          let minD = MIN_CENTER_DIST_DEFAULT;
+          const b = getSpawnBounds();
+          const span = Math.hypot(b.maxX - b.minX, b.maxY - b.minY);
+          if (span < minD * 1.25) {
+            minD = Math.max(TARGET_SIZE * 0.92, span / 2.8);
+          }
+          let extra = null;
+          const prevMin = MIN_MOVE_FROM_OLD_SPOT;
+          if (avoidPreviousSpot) {
+            const el = targetEls[slotIndex];
+            const ox = parseFloat(el.style.left);
+            const oy = parseFloat(el.style.top);
+            if (Number.isFinite(ox) && Number.isFinite(oy)) {
+              extra = [{ x: ox, y: oy }];
+            }
+          }
+          const p = placeOne(slotIndex, minD, extra, prevMin);
+          applyPosition(targetEls[slotIndex], p.x, p.y);
+        }
+
+        function removeTargetsFromDOM() {
+          for (let i = 0; i < targetEls.length; i++) {
+            const el = targetEls[i];
+            if (el && el.parentNode) el.parentNode.removeChild(el);
+          }
+          targetEls.length = 0;
+        }
+
+        function onTargetPointerDown(e) {
+          if (e.pointerType === "mouse" && e.button !== 0) return;
+          if (!playing) return;
+          e.preventDefault();
+          e.stopPropagation();
+          const slot = parseInt(e.currentTarget.dataset.slot, 10);
+          if (!Number.isFinite(slot)) return;
+          hits++;
+          totalClicks++;
+          score++;
+          elScore.textContent = String(score);
+          updateAccuracyDisplay();
+          repositionSlot(slot, true);
+        }
+
+        function onGameAreaMissPointer(e) {
+          if (!playing) return;
+          if (e.pointerType === "mouse" && e.button !== 0) return;
+          if (e.target !== gameArea) return;
+          e.preventDefault();
+          totalClicks++;
+          updateAccuracyDisplay();
+        }
+
+        function tick() {
+          timeLeft--;
+          elTimer.textContent = String(timeLeft);
+          setTimeProgress();
+          if (timeLeft <= 0) endGame();
+        }
+
+        function startGame() {
+          startBackgroundMusic();
+          incrementRunCountGlobal();
+          score = 0;
+          hits = 0;
+          totalClicks = 0;
+          timeLeft = roundSeconds;
+          playing = true;
+          elScore.textContent = "0";
+          elTimer.textContent = String(roundSeconds);
+          elAccuracy.textContent = "—";
+          elTimeFill.style.width = "100%";
+          modePanel.classList.add("is-locked");
+          gameArea.classList.remove("waiting");
+          startOverlay.classList.add("hidden");
+          resultOverlay.classList.add("hidden");
+          removeTargetsFromDOM();
+          gameArea.addEventListener("pointerdown", onGameAreaMissPointer, {
+            passive: false,
+          });
+          layoutInitialTargets();
+          timerId = setInterval(tick, 1000);
+        }
+
+        async function endGame() {
+          playing = false;
+          modePanel.classList.remove("is-locked");
+          if (timerId) {
+            clearInterval(timerId);
+            timerId = null;
+          }
+          gameArea.removeEventListener("pointerdown", onGameAreaMissPointer);
+          removeTargetsFromDOM();
+          gameArea.classList.add("waiting");
+          elTimeFill.style.width = "0%";
+          const acc =
+            totalClicks === 0
+              ? "0%"
+              : Math.round((hits / totalClicks) * 1000) / 10 + "%";
+          const accNum = totalClicks === 0 ? 0 : (hits / totalClicks) * 100;
+
+          const prev = readRecords();
+          let nextBestScore = prev.bestScore;
+          let nextBestAcc = prev.bestAccuracy;
+          const beatScore = score > prev.bestScore;
+          const beatAcc =
+            totalClicks > 0 && accNum > prev.bestAccuracy + 0.0001;
+
+          if (score > nextBestScore) nextBestScore = score;
+          if (totalClicks > 0 && accNum > nextBestAcc) nextBestAcc = accNum;
+
+          persistRecords(nextBestScore, nextBestAcc);
+          await upsertGlobalPB(score, accNum);
+          renderHeaderRecords();
+          await renderLeaderboard();
+
+          elResultScore.textContent = String(score);
+          elResultAccuracy.textContent = acc;
+          elResultBestScore.textContent = String(nextBestScore);
+          elResultBestAccuracy.textContent =
+            nextBestAcc > 0 ? formatAccPct(nextBestAcc) : "—";
+          elResultModeLabel.textContent = roundSeconds + "s";
+
+          if (beatScore && beatAcc) {
+            elResultBanner.textContent = "New best score & accuracy";
+            elResultBanner.classList.remove("hidden");
+          } else if (beatScore) {
+            elResultBanner.textContent = "New personal best score";
+            elResultBanner.classList.remove("hidden");
+          } else if (beatAcc) {
+            elResultBanner.textContent = "New personal best accuracy";
+            elResultBanner.classList.remove("hidden");
+          } else {
+            elResultBanner.textContent = "";
+            elResultBanner.classList.add("hidden");
+          }
+
+          resultOverlay.classList.remove("hidden");
+        }
+
+        btnStart.addEventListener("click", startGame);
+        btnReplay.addEventListener("click", startGame);
+        modeButtons.forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            if (playing) return;
+            const d = parseInt(btn.dataset.duration, 10);
+            if (!Number.isFinite(d)) return;
+            roundSeconds = d;
+            syncModeUi();
+          });
+        });
+        window.addEventListener("resize", function () {
+          if (!playing) return;
+          ensureTargets();
+          for (let i = 0; i < targetEls.length; i++) repositionSlot(i, false);
+        });
+
+        ensurePlayerProfile();
+        initFirebase();
+        syncModeUi();
+      })();
+    </script>
+  </body>
+</html>
