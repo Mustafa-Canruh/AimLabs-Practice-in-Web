@@ -7,7 +7,7 @@ A free, fast, and responsive 2D Aim Trainer built entirely for the browser. Prac
 **You don't need to download any files, install any code editors, or run terminal commands!**
 
 Simply click the link below to play directly in your browser:
-👉 **[Play Pro Labs Aim Trainer Here]((https://github.com/Mustafa-Canruh/AimLabs-Practice-in-Web/blob/main/aim-trainer/index.html))**
+👉 **[Play Pro Labs Aim Trainer Here](https://github.com/Mustafa-Canruh/AimLabs-Practice-in-Web/blob/main/aim-trainer/index.html)**
 
 *(Note: The game works entirely in the browser. No installation required!)*
 
