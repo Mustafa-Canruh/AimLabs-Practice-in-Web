@@ -49,6 +49,17 @@
         display: flex;
         flex-direction: column;
         user-select: none;
+        transition: box-shadow 0.5s ease-in-out;
+      }
+
+      body.glow-3 {
+        box-shadow: inset 0 0 200px rgba(56, 217, 255, 0.85);
+      }
+      body.glow-2 {
+        box-shadow: inset 0 0 200px rgba(56, 217, 255, 0.45);
+      }
+      body.glow-1 {
+        box-shadow: inset 0 0 200px rgba(56, 217, 255, 0.15);
       }
 
       .shell {
@@ -220,8 +231,9 @@
         display: flex;
         flex-direction: column;
         gap: 0.22rem;
-        max-height: 112px;
-        overflow: auto;
+        height: 56px; /* EKRAN ZIPLAMASIN DIYE SABIT YUKSEKLIK */
+        overflow-y: auto;
+        overflow-x: hidden;
         padding-right: 0.15rem;
       }
 
@@ -258,7 +270,7 @@
       .stats-live-wrap {
         justify-self: end;
         width: 100%;
-        max-width: 560px;
+        max-width: 660px; /* WIDGETLAR BUYUK KALSIN DIYE MAX-WIDTH ARTIRILDI */
       }
 
       @media (max-width: 920px) {
@@ -810,8 +822,23 @@
             <ol class="leaderboard-list" id="leaderboard-list"></ol>
           </div>
         </div>
-        <div class="stats-live-wrap">
-          <div class="stats-row stats-live">
+
+        <!-- STOP / RESTART BUTONLARI VE BUYUK STATS KARTLARI -->
+        <div class="stats-live-wrap" style="display: flex; gap: 1rem; align-items: center;">
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; flex-shrink: 0; justify-content: center;">
+            <button type="button" class="mode-btn" id="btn-stop" style="padding: 0 0.75rem; font-size: 0.65rem; height: 36px; min-height: 36px; display: flex; align-items: center; justify-content: center; gap: 0.35rem;" aria-label="Stop">
+              <!-- Stop Ikonu -->
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              Stop
+            </button>
+            <button type="button" class="mode-btn" id="btn-restart" style="padding: 0 0.75rem; font-size: 0.65rem; height: 36px; min-height: 36px; display: flex; align-items: center; justify-content: center; gap: 0.35rem;" aria-label="Restart">
+              <!-- Restart Ikonu -->
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              Restart
+            </button>
+          </div>
+          
+          <div class="stats-row stats-live" style="flex: 1;">
             <div class="stat-card live-primary">
               <div class="stat-label">Score</div>
               <div class="stat-value" id="score">0</div>
@@ -846,6 +873,8 @@
           >
         </div>
         <div id="game-area" class="waiting">
+          <div id="countdown-display" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 7rem; font-weight: 800; color: var(--cyan); text-shadow: 0 0 30px var(--cyan-glow); z-index: 8; pointer-events: none; opacity: 0; transition: opacity 0.2s;"></div>
+          
           <div id="start-overlay" class="overlay">
             <div class="panel">
               <div class="panel-inner">
@@ -951,6 +980,9 @@
         const elLeaderboardList = document.getElementById("leaderboard-list");
         const elLeaderboardMeta = document.getElementById("leaderboard-meta");
         const bgmAudio = document.getElementById("bgm-audio");
+        const btnRestart = document.getElementById("btn-restart");
+        const btnStop = document.getElementById("btn-stop");
+        const elCountdownDisplay = document.getElementById("countdown-display");
 
         const STORAGE_RECORDS = "aimTrainerRecordsByMode";
         const STORAGE_PROFILE = "aimTrainerPlayerProfile";
@@ -963,10 +995,13 @@
         let timeLeft = roundSeconds;
         let timerId = null;
         let playing = false;
+        let isCountingDown = false;
+        let countInterval = null;
         const targetEls = [];
         let playerName = "Mustafa Canruh";
         let db = null;
         let firebaseEnabled = false;
+        let audioCtx = null;
 
         const firebaseConfig = {
           // BURAYA FIREBASE CONFIG GELECEK
@@ -1064,13 +1099,42 @@
           writeJson(STORAGE_PROFILE, { name: playerName });
         }
 
+        function ensureAudioContext() {
+          if (audioCtx) return;
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (Ctx) audioCtx = new Ctx();
+        }
+
+        function playBeepSound(isGo) {
+          if (!audioCtx) return;
+          if (audioCtx.state === "suspended") audioCtx.resume();
+          const t = audioCtx.currentTime;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          
+          osc.type = "sine";
+          if (isGo) {
+            osc.frequency.setValueAtTime(880, t); // GO sesi (Ince uzun)
+            gain.gain.setValueAtTime(0.15, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+            osc.start(t);
+            osc.stop(t + 0.6);
+          } else {
+            osc.frequency.setValueAtTime(440, t); // 3-2-1 Sesi (Kalin kisa)
+            gain.gain.setValueAtTime(0.15, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+            osc.start(t);
+            osc.stop(t + 0.2);
+          }
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+        }
+
         function startBackgroundMusic() {
           if (!bgmAudio) return;
           bgmAudio.volume = 0.38;
           bgmAudio.muted = false;
-          bgmAudio.play().catch(function () {
-            // Ignore autoplay policy errors; next click retries.
-          });
+          bgmAudio.play().catch(function () {});
         }
 
         function readAllRecords() {
@@ -1090,12 +1154,8 @@
             if (Number.isFinite(legacyS) || Number.isFinite(legacyA)) {
               const migrated = {
                 60: {
-                  bestScore: Number.isFinite(legacyS)
-                    ? Math.max(0, legacyS)
-                    : 0,
-                  bestAccuracy: Number.isFinite(legacyA)
-                    ? Math.max(0, legacyA)
-                    : 0,
+                  bestScore: Number.isFinite(legacyS) ? Math.max(0, legacyS) : 0,
+                  bestAccuracy: Number.isFinite(legacyA) ? Math.max(0, legacyA) : 0,
                 },
               };
               localStorage.setItem(STORAGE_RECORDS, JSON.stringify(migrated));
@@ -1114,10 +1174,6 @@
           try {
             localStorage.setItem(STORAGE_RECORDS, JSON.stringify(obj));
           } catch {}
-        }
-
-        function modeKey() {
-          return String(roundSeconds);
         }
 
         function readRecords() {
@@ -1167,12 +1223,8 @@
             await runTransaction(db, async function (tx) {
               const snap = await tx.get(entryRef);
               const current = snap.exists() ? snap.data() : null;
-              const oldScore =
-                current && Number.isFinite(current.score) ? current.score : 0;
-              const oldAcc =
-                current && Number.isFinite(current.accuracy)
-                  ? current.accuracy
-                  : 0;
+              const oldScore = current && Number.isFinite(current.score) ? current.score : 0;
+              const oldAcc = current && Number.isFinite(current.accuracy) ? current.accuracy : 0;
               const shouldUpdate =
                 !snap.exists() ||
                 finalScore > oldScore ||
@@ -1214,7 +1266,7 @@
             const q = query(
               collection(db, "leaderboards", mode, "entries"),
               orderBy("score", "desc"),
-              limit(7),
+              limit(5), // ILK 5 KISIYLE SINIRLANDIRILDI
             );
             const [rowsSnap, runCount] = await Promise.all([
               getDocs(q),
@@ -1283,7 +1335,7 @@
             btn.setAttribute("aria-pressed", on ? "true" : "false");
           });
           elMetaDuration.textContent = String(roundSeconds);
-          if (!playing) {
+          if (!playing && !isCountingDown) {
             elTimer.textContent = String(roundSeconds);
             elTimeFill.style.width = "100%";
           }
@@ -1378,16 +1430,11 @@
           const bounds = getSpawnBounds();
           const peers = otherCenters(skipIndex);
           const avoidPrev = extraAvoid && extraAvoid.length ? extraAvoid : [];
-          const prevMin =
-            typeof minFromExtra === "number" ? minFromExtra : minCenterDist;
+          const prevMin = typeof minFromExtra === "number" ? minFromExtra : minCenterDist;
 
           function okStrict(p) {
             if (!fitsSeparation(p.x, p.y, peers, minCenterDist)) return false;
-            if (
-              avoidPrev.length &&
-              !fitsSeparation(p.x, p.y, avoidPrev, prevMin)
-            )
-              return false;
+            if (avoidPrev.length && !fitsSeparation(p.x, p.y, avoidPrev, prevMin)) return false;
             return true;
           }
 
@@ -1397,18 +1444,11 @@
             if (okStrict(p)) return p;
           }
 
-          const relaxedPeer = Math.max(
-            TARGET_SIZE * 0.95,
-            minCenterDist * 0.88,
-          );
+          const relaxedPeer = Math.max(TARGET_SIZE * 0.95, minCenterDist * 0.88);
           const relaxedPrev = Math.max(TARGET_SIZE * 0.95, prevMin * 0.88);
           function okRelaxed(p) {
             if (!fitsSeparation(p.x, p.y, peers, relaxedPeer)) return false;
-            if (
-              avoidPrev.length &&
-              !fitsSeparation(p.x, p.y, avoidPrev, relaxedPrev)
-            )
-              return false;
+            if (avoidPrev.length && !fitsSeparation(p.x, p.y, avoidPrev, relaxedPrev)) return false;
             return true;
           }
           for (let t = 0; t < tries; t++) {
@@ -1439,10 +1479,7 @@
             if (dist(best.x, best.y, ox, oy) < 28) {
               for (let t = 0; t < 400; t++) {
                 const p = pickRandomPoint(bounds);
-                if (
-                  dist(p.x, p.y, ox, oy) >= 28 &&
-                  fitsSeparation(p.x, p.y, peers, TARGET_SIZE * 0.98)
-                ) {
+                if (dist(p.x, p.y, ox, oy) >= 28 && fitsSeparation(p.x, p.y, peers, TARGET_SIZE * 0.98)) {
                   return p;
                 }
               }
@@ -1464,9 +1501,7 @@
             btn.className = "target";
             btn.setAttribute("aria-label", "Target");
             btn.dataset.slot = String(idx);
-            btn.addEventListener("pointerdown", onTargetPointerDown, {
-              passive: false,
-            });
+            btn.addEventListener("pointerdown", onTargetPointerDown, { passive: false });
             gameArea.appendChild(btn);
             targetEls.push(btn);
           }
@@ -1550,13 +1585,23 @@
         }
 
         function startGame() {
-          startBackgroundMusic();
-          incrementRunCountGlobal();
+          if (isCountingDown) return;
+          ensureAudioContext(); // SES SISTEMINI AKTIF ET
+          
+          if (timerId) clearInterval(timerId);
+          if (countInterval) clearInterval(countInterval);
+          if (bgmAudio) {
+            bgmAudio.pause();
+            bgmAudio.currentTime = 0;
+          }
+          
           score = 0;
           hits = 0;
           totalClicks = 0;
           timeLeft = roundSeconds;
-          playing = true;
+          playing = false; 
+          isCountingDown = true;
+          
           elScore.textContent = "0";
           elTimer.textContent = String(roundSeconds);
           elAccuracy.textContent = "—";
@@ -1566,36 +1611,100 @@
           startOverlay.classList.add("hidden");
           resultOverlay.classList.add("hidden");
           removeTargetsFromDOM();
-          gameArea.addEventListener("pointerdown", onGameAreaMissPointer, {
-            passive: false,
-          });
+          
           layoutInitialTargets();
-          timerId = setInterval(tick, 1000);
+          
+          let count = 3;
+          elCountdownDisplay.textContent = count;
+          elCountdownDisplay.style.opacity = "1";
+          document.body.className = "glow-" + count;
+          playBeepSound(false); // Ilk sesi çal
+          
+          countInterval = setInterval(function() {
+            count--;
+            if (count > 0) {
+              elCountdownDisplay.textContent = count;
+              document.body.className = "glow-" + count;
+              playBeepSound(false); // 2 ve 1 sesleri
+            } else if (count === 0) {
+              elCountdownDisplay.textContent = "GO!";
+              document.body.className = "";
+              playBeepSound(true); // GO SESI (Ince ve uzun)
+              
+              // SIFIR GECIKMEYLE OYUNU BURADA BASLAT
+              isCountingDown = false;
+              playing = true; 
+              startBackgroundMusic();
+              incrementRunCountGlobal();
+              gameArea.addEventListener("pointerdown", onGameAreaMissPointer, { passive: false });
+              timerId = setInterval(tick, 1000);
+            } else {
+              clearInterval(countInterval);
+              elCountdownDisplay.style.opacity = "0";
+            }
+          }, 1000);
+        }
+
+        function restartGame() {
+          if (!playing && !isCountingDown) return; 
+          if (timerId) clearInterval(timerId);
+          if (countInterval) clearInterval(countInterval);
+          playing = false;
+          isCountingDown = false;
+          document.body.className = "";
+          elCountdownDisplay.style.opacity = "0";
+          gameArea.removeEventListener("pointerdown", onGameAreaMissPointer);
+          removeTargetsFromDOM();
+          startGame();
+        }
+
+        function stopGame() {
+          if (!playing && !isCountingDown) return;
+          if (timerId) clearInterval(timerId);
+          if (countInterval) clearInterval(countInterval);
+          if (bgmAudio) {
+             bgmAudio.pause();
+             bgmAudio.currentTime = 0;
+          }
+          playing = false;
+          isCountingDown = false;
+          document.body.className = "";
+          elCountdownDisplay.style.opacity = "0";
+          gameArea.removeEventListener("pointerdown", onGameAreaMissPointer);
+          removeTargetsFromDOM();
+          gameArea.classList.add("waiting");
+          elTimeFill.style.width = "100%";
+          elTimer.textContent = String(roundSeconds);
+          score = 0;
+          hits = 0;
+          totalClicks = 0;
+          elScore.textContent = "0";
+          elAccuracy.textContent = "—";
+          modePanel.classList.remove("is-locked");
+          startOverlay.classList.remove("hidden");
+          resultOverlay.classList.add("hidden");
         }
 
         async function endGame() {
           playing = false;
           modePanel.classList.remove("is-locked");
-          if (timerId) {
-            clearInterval(timerId);
-            timerId = null;
-          }
+          if (timerId) clearInterval(timerId);
+          timerId = null;
+          if (countInterval) clearInterval(countInterval);
+          countInterval = null;
           gameArea.removeEventListener("pointerdown", onGameAreaMissPointer);
           removeTargetsFromDOM();
           gameArea.classList.add("waiting");
           elTimeFill.style.width = "0%";
-          const acc =
-            totalClicks === 0
-              ? "0%"
-              : Math.round((hits / totalClicks) * 1000) / 10 + "%";
+          
+          const acc = totalClicks === 0 ? "0%" : Math.round((hits / totalClicks) * 1000) / 10 + "%";
           const accNum = totalClicks === 0 ? 0 : (hits / totalClicks) * 100;
 
           const prev = readRecords();
           let nextBestScore = prev.bestScore;
           let nextBestAcc = prev.bestAccuracy;
           const beatScore = score > prev.bestScore;
-          const beatAcc =
-            totalClicks > 0 && accNum > prev.bestAccuracy + 0.0001;
+          const beatAcc = totalClicks > 0 && accNum > prev.bestAccuracy + 0.0001;
 
           if (score > nextBestScore) nextBestScore = score;
           if (totalClicks > 0 && accNum > nextBestAcc) nextBestAcc = accNum;
@@ -1608,8 +1717,7 @@
           elResultScore.textContent = String(score);
           elResultAccuracy.textContent = acc;
           elResultBestScore.textContent = String(nextBestScore);
-          elResultBestAccuracy.textContent =
-            nextBestAcc > 0 ? formatAccPct(nextBestAcc) : "—";
+          elResultBestAccuracy.textContent = nextBestAcc > 0 ? formatAccPct(nextBestAcc) : "—";
           elResultModeLabel.textContent = roundSeconds + "s";
 
           if (beatScore && beatAcc) {
@@ -1631,9 +1739,11 @@
 
         btnStart.addEventListener("click", startGame);
         btnReplay.addEventListener("click", startGame);
+        btnRestart.addEventListener("click", restartGame);
+        btnStop.addEventListener("click", stopGame);
         modeButtons.forEach(function (btn) {
           btn.addEventListener("click", function () {
-            if (playing) return;
+            if (playing || isCountingDown) return;
             const d = parseInt(btn.dataset.duration, 10);
             if (!Number.isFinite(d)) return;
             roundSeconds = d;
