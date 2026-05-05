@@ -12,7 +12,7 @@
       }
 
       :root {
-        --shell: 1080px;
+        --shell: 1280px;
         --bg-deep: #07090f;
         --cyan: #38d9ff;
         --cyan-soft: #7ae9ff;
@@ -83,31 +83,25 @@
 
       .app-bar-inner {
         padding: 0.75rem 1.25rem 0.9rem;
-        display: grid;
-        grid-template-columns: minmax(0, auto) minmax(0, 1fr);
-        align-items: end;
-        gap: 0.85rem 1.5rem;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1.5rem;
       }
 
       @media (max-width: 920px) {
         .app-bar-inner {
-          grid-template-columns: 1fr;
+          flex-direction: column;
           align-items: stretch;
         }
       }
 
       .bar-left {
+        flex: 1; 
         display: flex;
         flex-direction: column;
         gap: 0.55rem;
         min-width: 0;
-        max-width: 300px;
-      }
-
-      @media (max-width: 920px) {
-        .bar-left {
-          max-width: none;
-        }
       }
 
       .brand {
@@ -122,6 +116,7 @@
         background: rgba(6, 10, 16, 0.55);
         border: 1px solid var(--border);
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        width: fit-content;
       }
 
       .mode-panel-label {
@@ -150,7 +145,7 @@
         font-size: 0.72rem;
         font-weight: 700;
         letter-spacing: 0.06em;
-        padding: 0.42rem 0.35rem;
+        padding: 0.42rem 0.6rem;
         border-radius: 8px;
         cursor: pointer;
         transition:
@@ -187,6 +182,9 @@
         color: var(--muted);
         padding: 0 0.1rem;
         max-width: 100%;
+        display: flex;
+        flex-wrap: wrap; 
+        column-gap: 0.4rem;
       }
 
       .records-inline .ri-val {
@@ -198,10 +196,17 @@
       .records-inline .ri-sep {
         opacity: 0.42;
         user-select: none;
-        margin: 0 0.2rem;
+      }
+
+      .leaderboards-wrapper {
+        display: flex;
+        gap: 0.75rem;
+        width: 100%; 
       }
 
       .leaderboard {
+        flex: 1;
+        min-width: 0;
         border: 1px solid var(--border);
         border-radius: 10px;
         background: rgba(7, 11, 17, 0.55);
@@ -231,10 +236,18 @@
         display: flex;
         flex-direction: column;
         gap: 0.22rem;
-        height: 56px; /* EKRAN ZIPLAMASIN DIYE SABIT YUKSEKLIK */
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding-right: 0.15rem;
+        max-height: 120px; /* SCROLL YUKSEKLIGI */
+        overflow-y: auto; /* SCROLL EKLENDI */
+        padding-right: 0.25rem;
+      }
+      
+      /* NEON SCROLLBAR TASARIMI */
+      .leaderboard-list::-webkit-scrollbar {
+        width: 4px;
+      }
+      .leaderboard-list::-webkit-scrollbar-thumb {
+        background: var(--cyan-dim);
+        border-radius: 4px;
       }
 
       .leaderboard-item {
@@ -261,6 +274,7 @@
       .leaderboard-score {
         color: #c5d7ef;
         font-variant-numeric: tabular-nums;
+        text-align: right;
       }
 
       .leaderboard-item.current .leaderboard-name {
@@ -268,15 +282,14 @@
       }
 
       .stats-live-wrap {
-        justify-self: end;
-        width: 100%;
-        max-width: 660px; /* WIDGETLAR BUYUK KALSIN DIYE MAX-WIDTH ARTIRILDI */
+        flex-shrink: 0; 
+        width: auto;
       }
 
       @media (max-width: 920px) {
         .stats-live-wrap {
-          justify-self: stretch;
-          max-width: none;
+          align-self: stretch;
+          width: 100%;
         }
       }
 
@@ -335,6 +348,7 @@
         flex-direction: column;
         justify-content: center;
         min-height: 88px;
+        min-width: 130px;
       }
 
       .stat-card::before {
@@ -810,29 +824,39 @@
             class="records-inline"
             title="Personal best for the selected round length"
           >
-            best score <span id="best-score" class="ri-val">0</span> points
-            <span class="ri-sep" aria-hidden="true"> - </span>
-            best accuracy <span id="best-accuracy" class="ri-val">—</span>
+            <div>best points <span id="best-score" class="ri-val">0</span></div>
+            <div class="ri-sep" aria-hidden="true"> - </div>
+            <div>best accuracy <span id="best-accuracy" class="ri-val">—</span></div>
           </div>
-          <div class="leaderboard">
-            <div class="leaderboard-head">
-              <span>Leaderboard</span>
-              <span class="leaderboard-meta" id="leaderboard-meta">0 runs</span>
+          
+          <!-- CIFT LEADERBOARD ALANI -->
+          <div class="leaderboards-wrapper">
+            <div class="leaderboard">
+              <div class="leaderboard-head">
+                <span>Leaderboard PC</span>
+                <span class="leaderboard-meta" id="leaderboard-pc-meta">0 runs</span>
+              </div>
+              <ol class="leaderboard-list" id="leaderboard-pc-list"></ol>
             </div>
-            <ol class="leaderboard-list" id="leaderboard-list"></ol>
+            
+            <div class="leaderboard">
+              <div class="leaderboard-head">
+                <span>Leaderboard Mobil</span>
+                <span class="leaderboard-meta" id="leaderboard-mobile-meta">0 runs</span>
+              </div>
+              <ol class="leaderboard-list" id="leaderboard-mobile-list"></ol>
+            </div>
           </div>
+
         </div>
 
-        <!-- STOP / RESTART BUTONLARI VE BUYUK STATS KARTLARI -->
         <div class="stats-live-wrap" style="display: flex; gap: 1rem; align-items: center;">
           <div style="display: flex; flex-direction: column; gap: 0.5rem; flex-shrink: 0; justify-content: center;">
             <button type="button" class="mode-btn" id="btn-stop" style="padding: 0 0.75rem; font-size: 0.65rem; height: 36px; min-height: 36px; display: flex; align-items: center; justify-content: center; gap: 0.35rem;" aria-label="Stop">
-              <!-- Stop Ikonu -->
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
               Stop
             </button>
             <button type="button" class="mode-btn" id="btn-restart" style="padding: 0 0.75rem; font-size: 0.65rem; height: 36px; min-height: 36px; display: flex; align-items: center; justify-content: center; gap: 0.35rem;" aria-label="Restart">
-              <!-- Restart Ikonu -->
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
               Restart
             </button>
@@ -840,7 +864,7 @@
           
           <div class="stats-row stats-live" style="flex: 1;">
             <div class="stat-card live-primary">
-              <div class="stat-label">Score</div>
+              <div class="stat-label">Hits</div>
               <div class="stat-value" id="score">0</div>
             </div>
             <div class="stat-card live-primary timer-card">
@@ -897,14 +921,16 @@
                   id="result-banner"
                   role="status"
                 ></p>
+                
                 <p class="result-line">
-                  Final score <strong id="result-score">0</strong>
+                  Final Points <strong id="result-calc-score">0</strong>
                 </p>
-                <p class="result-line">
-                  Run accuracy <strong id="result-accuracy">0%</strong>
+                <p class="result-line" style="font-size: 0.8rem;">
+                  Hits: <span id="result-score" style="color:#e8ecf3">0</span> | Acc: <span id="result-accuracy" style="color:#e8ecf3">0%</span>
                 </p>
-                <p class="result-line result-pb">
-                  PB score <strong id="result-best-score">0</strong> · round
+                
+                <p class="result-line result-pb" style="margin-top: 0.8rem;">
+                  PB points <strong id="result-best-score">0</strong> · round
                   <strong id="result-mode-label">60s</strong>
                 </p>
                 <p class="result-line result-pb">
@@ -964,6 +990,7 @@
         const elTimer = document.getElementById("timer");
         const elAccuracy = document.getElementById("accuracy");
         const elResultScore = document.getElementById("result-score");
+        const elResultCalcScore = document.getElementById("result-calc-score");
         const elResultAccuracy = document.getElementById("result-accuracy");
         const elResultBestScore = document.getElementById("result-best-score");
         const elResultBestAccuracy = document.getElementById(
@@ -977,8 +1004,12 @@
         const modePanel = document.getElementById("mode-panel");
         const modeButtons = document.querySelectorAll(".mode-btn");
         const elResultModeLabel = document.getElementById("result-mode-label");
-        const elLeaderboardList = document.getElementById("leaderboard-list");
-        const elLeaderboardMeta = document.getElementById("leaderboard-meta");
+        
+        const elLeaderboardPCList = document.getElementById("leaderboard-pc-list");
+        const elLeaderboardPCMeta = document.getElementById("leaderboard-pc-meta");
+        const elLeaderboardMobileList = document.getElementById("leaderboard-mobile-list");
+        const elLeaderboardMobileMeta = document.getElementById("leaderboard-mobile-meta");
+        
         const bgmAudio = document.getElementById("bgm-audio");
         const btnRestart = document.getElementById("btn-restart");
         const btnStop = document.getElementById("btn-stop");
@@ -987,6 +1018,9 @@
         const STORAGE_RECORDS = "aimTrainerRecordsByMode";
         const STORAGE_PROFILE = "aimTrainerPlayerProfile";
         const FIREBASE_APP_NAME = "aimTrainerApp";
+        
+        const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
+        const currentDeviceType = isMobileDevice ? "mobile" : "pc";
 
         let roundSeconds = 60;
         let score = 0;
@@ -1004,7 +1038,6 @@
         let audioCtx = null;
 
         const firebaseConfig = {
-          // BURAYA FIREBASE CONFIG GELECEK
           apiKey: "AIzaSyDA2qYgwQfzuAAbo_sQFrHpU1G5DfBLyNY",
           authDomain: "aimtrainer-prolabs.firebaseapp.com",
           projectId: "aimtrainer-prolabs",
@@ -1038,7 +1071,7 @@
         }
 
         function modeKey() {
-          return String(roundSeconds);
+          return String(roundSeconds) + "_" + currentDeviceType;
         }
 
         function playerDocKey() {
@@ -1056,7 +1089,8 @@
 
         function initFirebase() {
           if (!isFirebaseConfigured()) {
-            elLeaderboardMeta.textContent = "Firebase not configured";
+            elLeaderboardPCMeta.textContent = "Firebase not configured";
+            elLeaderboardMobileMeta.textContent = "Firebase not configured";
             firebaseEnabled = false;
             return;
           }
@@ -1066,7 +1100,8 @@
             firebaseEnabled = true;
           } catch {
             firebaseEnabled = false;
-            elLeaderboardMeta.textContent = "Firebase init failed";
+            elLeaderboardPCMeta.textContent = "Firebase init failed";
+            elLeaderboardMobileMeta.textContent = "Firebase init failed";
           }
         }
 
@@ -1074,18 +1109,6 @@
           const profile = readJson(STORAGE_PROFILE, {});
           if (profile.name && typeof profile.name === "string") {
             playerName = profile.name.trim() || "Mustafa Canruh";
-            return;
-          }
-          const legacyScore = parseInt(
-            localStorage.getItem("aimTrainerBestScore"),
-            10,
-          );
-          const legacyAcc = parseFloat(
-            localStorage.getItem("aimTrainerBestAccuracyPct"),
-          );
-          if (Number.isFinite(legacyScore) || Number.isFinite(legacyAcc)) {
-            playerName = "Mustafa Canruh";
-            writeJson(STORAGE_PROFILE, { name: playerName });
             return;
           }
           let asked = window.prompt(
@@ -1114,13 +1137,13 @@
           
           osc.type = "sine";
           if (isGo) {
-            osc.frequency.setValueAtTime(880, t); // GO sesi (Ince uzun)
+            osc.frequency.setValueAtTime(880, t); 
             gain.gain.setValueAtTime(0.15, t);
             gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
             osc.start(t);
             osc.stop(t + 0.6);
           } else {
-            osc.frequency.setValueAtTime(440, t); // 3-2-1 Sesi (Kalin kisa)
+            osc.frequency.setValueAtTime(440, t); 
             gain.gain.setValueAtTime(0.15, t);
             gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
             osc.start(t);
@@ -1143,26 +1166,6 @@
             if (raw) {
               const o = JSON.parse(raw);
               return o && typeof o === "object" ? o : {};
-            }
-            const legacyS = parseInt(
-              localStorage.getItem("aimTrainerBestScore"),
-              10,
-            );
-            const legacyA = parseFloat(
-              localStorage.getItem("aimTrainerBestAccuracyPct"),
-            );
-            if (Number.isFinite(legacyS) || Number.isFinite(legacyA)) {
-              const migrated = {
-                60: {
-                  bestScore: Number.isFinite(legacyS) ? Math.max(0, legacyS) : 0,
-                  bestAccuracy: Number.isFinite(legacyA) ? Math.max(0, legacyA) : 0,
-                },
-              };
-              localStorage.setItem(STORAGE_RECORDS, JSON.stringify(migrated));
-              if (!readJson(STORAGE_PROFILE, {}).name) {
-                writeJson(STORAGE_PROFILE, { name: "Mustafa Canruh" });
-              }
-              return migrated;
             }
             return {};
           } catch {
@@ -1189,10 +1192,10 @@
           };
         }
 
-        function persistRecords(bestScore, bestAccuracyPct) {
+        function persistRecords(bestCalcScore, bestAccuracyPct) {
           const all = readAllRecords();
           all[modeKey()] = {
-            bestScore: bestScore,
+            bestScore: bestCalcScore,
             bestAccuracy: bestAccuracyPct,
           };
           writeAllRecords(all);
@@ -1209,13 +1212,13 @@
           } catch {}
         }
 
-        async function upsertGlobalPB(finalScore, finalAcc) {
+        async function upsertGlobalPB(rawHits, finalAcc, calculatedScore) {
           if (!firebaseEnabled || !db) return;
-          const mode = modeKey();
+          const fbModeKey = String(roundSeconds) + "_" + currentDeviceType;
           const entryRef = doc(
             db,
             "leaderboards",
-            mode,
+            fbModeKey,
             "entries",
             playerDocKey(),
           );
@@ -1223,18 +1226,21 @@
             await runTransaction(db, async function (tx) {
               const snap = await tx.get(entryRef);
               const current = snap.exists() ? snap.data() : null;
-              const oldScore = current && Number.isFinite(current.score) ? current.score : 0;
+              const oldCalcScore = current && Number.isFinite(current.calcScore) ? current.calcScore : 0;
               const oldAcc = current && Number.isFinite(current.accuracy) ? current.accuracy : 0;
+              
               const shouldUpdate =
                 !snap.exists() ||
-                finalScore > oldScore ||
-                (finalScore === oldScore && finalAcc > oldAcc + 0.0001);
+                calculatedScore > oldCalcScore ||
+                (calculatedScore === oldCalcScore && finalAcc > oldAcc + 0.0001);
+                
               if (!shouldUpdate) return;
               tx.set(entryRef, {
                 name: playerName,
-                mode: mode,
-                score: finalScore,
+                mode: fbModeKey,
+                score: rawHits, 
                 accuracy: finalAcc,
+                calcScore: calculatedScore, 
                 updatedAt: serverTimestamp(),
               });
             });
@@ -1252,67 +1258,108 @@
             return null;
           }
         }
+        
+        // UNIQUE USER FILTRESI
+        function getUniqueTopRuns(rows) {
+          const map = new Map();
+          rows.forEach(row => {
+            const name = (row.name || "Anonymous").trim().toLowerCase();
+            const currentBest = map.get(name);
+            const rowScore = row.calcScore || 0;
+            const rowAcc = row.accuracy || 0;
+            if (!currentBest) {
+              map.set(name, row);
+            } else {
+              const bestScore = currentBest.calcScore || 0;
+              const bestAcc = currentBest.accuracy || 0;
+              if (rowScore > bestScore || (rowScore === bestScore && rowAcc > bestAcc)) {
+                map.set(name, row);
+              }
+            }
+          });
+          return Array.from(map.values());
+        }
 
         async function renderLeaderboard() {
           if (!firebaseEnabled || !db) {
-            elLeaderboardMeta.textContent = "Firebase required";
-            elLeaderboardList.innerHTML =
-              '<li class="leaderboard-item"><span class="leaderboard-rank">#</span><span class="leaderboard-name">Configure Firebase</span><span class="leaderboard-score">--</span></li>';
+            elLeaderboardPCList.innerHTML = '<li class="leaderboard-item">Firebase required</li>';
+            elLeaderboardMobileList.innerHTML = '<li class="leaderboard-item">Firebase required</li>';
             return;
           }
-          elLeaderboardMeta.textContent = "loading...";
+          elLeaderboardPCMeta.textContent = "loading...";
+          elLeaderboardMobileMeta.textContent = "loading...";
+          
           try {
-            const mode = modeKey();
-            const q = query(
-              collection(db, "leaderboards", mode, "entries"),
-              orderBy("score", "desc"),
-              limit(5), // ILK 5 KISIYLE SINIRLANDIRILDI
-            );
-            const [rowsSnap, runCount] = await Promise.all([
-              getDocs(q),
-              readGlobalRunCount(),
+            const pcKey = roundSeconds + "_pc";
+            const mobKey = roundSeconds + "_mobile";
+            const oldKey = String(roundSeconds);
+
+            const qPC = query(collection(db, "leaderboards", pcKey, "entries"), orderBy("calcScore", "desc"), limit(100));
+            const qMobile = query(collection(db, "leaderboards", mobKey, "entries"), orderBy("calcScore", "desc"), limit(100));
+            const qOld = query(collection(db, "leaderboards", oldKey, "entries"), limit(150));
+
+            const [snapPC, snapMobile, snapOld, runCount] = await Promise.all([
+              getDocs(qPC),
+              getDocs(qMobile),
+              getDocs(qOld),
+              readGlobalRunCount()
             ]);
-            elLeaderboardMeta.textContent =
-              (Number.isFinite(runCount) ? runCount : 0) + " runs";
-            if (rowsSnap.empty) {
-              elLeaderboardList.innerHTML =
-                '<li class="leaderboard-item"><span class="leaderboard-rank">#</span><span class="leaderboard-name">No runs yet</span><span class="leaderboard-score">--</span></li>';
-              return;
+
+            const pcRowsRaw = [];
+            const mobileRowsRaw = [];
+
+            snapPC.forEach(d => pcRowsRaw.push(d.data()));
+            snapMobile.forEach(d => mobileRowsRaw.push(d.data()));
+
+            snapOld.forEach(d => {
+              const data = d.data();
+              const rawHits = data.score || 0;
+              const acc = data.accuracy || 0;
+              data.calcScore = data.calcScore || Math.round(rawHits * (acc / 10)); 
+              
+              let isMob = false;
+              if (roundSeconds === 15 && rawHits > 45) isMob = true;
+              else if (roundSeconds === 30 && rawHits > 85) isMob = true;
+              else if (roundSeconds === 60 && rawHits > 160) isMob = true;
+
+              if (isMob) mobileRowsRaw.push(data);
+              else pcRowsRaw.push(data);
+            });
+
+            // UNIQUE KONTROLU
+            const pcRows = getUniqueTopRuns(pcRowsRaw);
+            const mobileRows = getUniqueTopRuns(mobileRowsRaw);
+
+            pcRows.sort((a, b) => (b.calcScore || 0) - (a.calcScore || 0) || (b.accuracy || 0) - (a.accuracy || 0));
+            mobileRows.sort((a, b) => (b.calcScore || 0) - (a.calcScore || 0) || (b.accuracy || 0) - (a.accuracy || 0));
+
+            elLeaderboardPCMeta.textContent = (Number.isFinite(runCount) ? runCount : 0) + " total runs";
+            elLeaderboardMobileMeta.textContent = "";
+
+            function buildHTML(rows) {
+              if (rows.length === 0) {
+                return '<li class="leaderboard-item"><span class="leaderboard-rank">#</span><span class="leaderboard-name">No runs yet</span><span class="leaderboard-score">--</span></li>';
+              }
+              return rows.map((row, i) => {
+                  const current = row.name === playerName ? " current" : "";
+                  const accText = typeof row.accuracy === "number" ? Math.round(row.accuracy * 10) / 10 + "%" : "--";
+                  const displayScore = row.calcScore || 0; 
+                  const hitsText = (row.score || 0) + ' hits';
+                  return (
+                    '<li class="leaderboard-item' + current + '">' +
+                    '<span class="leaderboard-rank">#' + (i + 1) + '</span>' +
+                    '<span class="leaderboard-name" title="' + escapeHtml(row.name || "Anonymous") + '">' + escapeHtml(row.name || "Anonymous") + '</span>' +
+                    '<span class="leaderboard-score" style="font-size:0.58rem;">' + displayScore + ' pts | ' + hitsText + ' | ' + accText + '</span></li>'
+                  );
+                }).join("");
             }
-            const rows = [];
-            rowsSnap.forEach(function (d) {
-              rows.push(d.data());
-            });
-            rows.sort(function (a, b) {
-              const sDiff = (b.score || 0) - (a.score || 0);
-              if (sDiff !== 0) return sDiff;
-              return (b.accuracy || 0) - (a.accuracy || 0);
-            });
-            elLeaderboardList.innerHTML = rows
-              .map(function (row, i) {
-                const current = row.name === playerName ? " current" : "";
-                const accText =
-                  typeof row.accuracy === "number"
-                    ? Math.round(row.accuracy * 10) / 10 + "%"
-                    : "--";
-                return (
-                  '<li class="leaderboard-item' +
-                  current +
-                  '"><span class="leaderboard-rank">#' +
-                  (i + 1) +
-                  '</span><span class="leaderboard-name">' +
-                  escapeHtml(row.name || "Anonymous") +
-                  '</span><span class="leaderboard-score">' +
-                  (row.score || 0) +
-                  " / " +
-                  accText +
-                  "</span></li>"
-                );
-              })
-              .join("");
+
+            elLeaderboardPCList.innerHTML = buildHTML(pcRows);
+            elLeaderboardMobileList.innerHTML = buildHTML(mobileRows);
+            
           } catch (err) {
-            const code = err && err.code ? String(err.code) : "unknown";
-            elLeaderboardMeta.textContent = "load failed (" + code + ")";
+            elLeaderboardPCMeta.textContent = "load failed";
+            elLeaderboardMobileMeta.textContent = "load failed";
           }
         }
 
@@ -1586,7 +1633,7 @@
 
         function startGame() {
           if (isCountingDown) return;
-          ensureAudioContext(); // SES SISTEMINI AKTIF ET
+          ensureAudioContext(); 
           
           if (timerId) clearInterval(timerId);
           if (countInterval) clearInterval(countInterval);
@@ -1618,20 +1665,19 @@
           elCountdownDisplay.textContent = count;
           elCountdownDisplay.style.opacity = "1";
           document.body.className = "glow-" + count;
-          playBeepSound(false); // Ilk sesi çal
+          playBeepSound(false); 
           
           countInterval = setInterval(function() {
             count--;
             if (count > 0) {
               elCountdownDisplay.textContent = count;
               document.body.className = "glow-" + count;
-              playBeepSound(false); // 2 ve 1 sesleri
+              playBeepSound(false); 
             } else if (count === 0) {
               elCountdownDisplay.textContent = "GO!";
               document.body.className = "";
-              playBeepSound(true); // GO SESI (Ince ve uzun)
+              playBeepSound(true); 
               
-              // SIFIR GECIKMEYLE OYUNU BURADA BASLAT
               isCountingDown = false;
               playing = true; 
               startBackgroundMusic();
@@ -1699,21 +1745,24 @@
           
           const acc = totalClicks === 0 ? "0%" : Math.round((hits / totalClicks) * 1000) / 10 + "%";
           const accNum = totalClicks === 0 ? 0 : (hits / totalClicks) * 100;
+          
+          const calculatedScore = Math.round(score * (accNum / 10));
 
           const prev = readRecords();
-          let nextBestScore = prev.bestScore;
+          let nextBestScore = prev.bestScore; 
           let nextBestAcc = prev.bestAccuracy;
-          const beatScore = score > prev.bestScore;
+          const beatScore = calculatedScore > prev.bestScore;
           const beatAcc = totalClicks > 0 && accNum > prev.bestAccuracy + 0.0001;
 
-          if (score > nextBestScore) nextBestScore = score;
+          if (calculatedScore > nextBestScore) nextBestScore = calculatedScore;
           if (totalClicks > 0 && accNum > nextBestAcc) nextBestAcc = accNum;
 
           persistRecords(nextBestScore, nextBestAcc);
-          await upsertGlobalPB(score, accNum);
+          await upsertGlobalPB(score, accNum, calculatedScore);
           renderHeaderRecords();
           await renderLeaderboard();
 
+          elResultCalcScore.textContent = String(calculatedScore);
           elResultScore.textContent = String(score);
           elResultAccuracy.textContent = acc;
           elResultBestScore.textContent = String(nextBestScore);
@@ -1721,10 +1770,10 @@
           elResultModeLabel.textContent = roundSeconds + "s";
 
           if (beatScore && beatAcc) {
-            elResultBanner.textContent = "New best score & accuracy";
+            elResultBanner.textContent = "New best points & accuracy";
             elResultBanner.classList.remove("hidden");
           } else if (beatScore) {
-            elResultBanner.textContent = "New personal best score";
+            elResultBanner.textContent = "New personal best points";
             elResultBanner.classList.remove("hidden");
           } else if (beatAcc) {
             elResultBanner.textContent = "New personal best accuracy";
